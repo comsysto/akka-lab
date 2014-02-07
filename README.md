@@ -12,4 +12,5 @@
 
 It's time to start :)
 
-Akka Version: 2.2.3
+* Akka Version: 2.2.3
+* Scala Version 2.10
