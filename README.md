@@ -7,7 +7,7 @@
    ╚═╝  ╚═╝  ╚═╚══════╝    ╚═╝  ╚═╚═╝  ╚═╚═╝  ╚═╚═╝  ╚═╝    ╚══════╚═╝  ╚═╚═════╝
 ```
 
-# Reactive Programming with Akka
+# Reactive Programming with Akka and Scala
 ## High performant and scalable Applications
 
 It's time to start :)
