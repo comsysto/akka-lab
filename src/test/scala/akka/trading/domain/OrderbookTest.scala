@@ -91,4 +91,36 @@ class OrderbookTest extends JUnitSuite {
     verify(tradeObserverMock).trade(any(classOf[Bid]), any(classOf[Ask]))
   }
 
+
+  @Test
+  def shouldDeterminePrice(): Unit = {
+    // 320
+    orderbook.addOrder(new Bid("ERI", 102, 70))
+    orderbook.addOrder(new Bid("ERI", 101, 100))
+    orderbook.addOrder(new Bid("ERI", 100, 150))
+
+    // 270
+    orderbook.addOrder(new Ask("ERI", 100, 50))
+    orderbook.addOrder(new Ask("ERI", 101, 90))
+    orderbook.addOrder(new Ask("ERI", 102, 130))
+
+    // Price == 100: 50
+    // Price == 101: 140
+    // Price == 102: 70
+
+    orderbook.matchOrders()
+
+    println("Bids: " + orderbook.bidSide)
+    println("Asks: " + orderbook.askSide)
+
+    // (50 * 100 + 20 * 101 + 70 * 101) / (50 + 20 + 70) ->
+
+    //assertEquals(0, orderbook.bidSide.size)
+    //assertEquals(0, orderbook.askSide.size)
+
+    //verify(tradeObserverMock).trade(bid, ask)
+  }
+
+
+
 }
