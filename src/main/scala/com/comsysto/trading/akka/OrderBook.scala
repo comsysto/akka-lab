@@ -1,6 +1,6 @@
 package com.comsysto.trading.akka
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{ActorRef, Actor, ActorLogging}
 import com.comsysto.trading.domain._
 import com.comsysto.trading.algorithm.{MarketPriceCalculator, TradeMatcher}
 import scala.concurrent.duration._
@@ -28,22 +28,31 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
   }
 
   override def receive = {
-    case ask@Ask(s, v, p) if s == security => asks = ask :: asks
-    case bid@Bid(s, v, p) if s == security => bids = bid :: bids
+    case ask@Ask(_, s, _, _) if s == security => asks = ask :: asks
+    case bid@Bid(_, s, _, _) if s == security => bids = bid :: bids
     case Trade => {
       log.debug(s"Triggering market price recalculation for $security")
-      recalculate()
+
+      recalculate() foreach {
+        case t => {
+          context.actorSelection(s"/user/" + t.bid.depot.accountNumber) ! t
+          context.actorSelection(s"/user/" + t.ask.depot.accountNumber) ! t
+        }
+      }
+
     }
 
     case ListPrice => sender ! ListPriceResponse(currentPrice)
   }
 
-  private def recalculate() {
+  private def recalculate() : List[SuccessfulTrade] = {
     val (newAsks, newBids, successfulTrades) = doTrades(asks, bids)
+    log.info(s"Successful trades: $successfulTrades")
 
     asks = newAsks
     bids = newBids
     currentPrice = calculatePrice(successfulTrades, currentPrice)
     log.info(s"Current price for $security is $currentPrice")
+    successfulTrades
   }
 }

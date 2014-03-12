@@ -30,11 +30,11 @@ class OrderRouter extends Actor with ActorLogging {
   def receive = {
     case ListSecurities => sender ! ListSecuritiesResponse(securities)
     //Just forward to the respective order book
-    case bid@Bid(sec, _, _) => {
+    case bid@Bid(_, sec, _, _) => {
       log.info(s"Received bid for $sec")
       orderBooks(sec) ! bid
     }
-    case ask@Ask(sec, _, _) => {
+    case ask@Ask(_, sec, _, _) => {
       log.info(s"Received ask for $sec")
       orderBooks(sec) ! ask
     }

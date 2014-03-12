@@ -1,14 +1,15 @@
 package com.comsysto.trading.domain
 
 trait Account {
-  def available : Boolean
+  def canDraw : Boolean
+  def accountNumber : String
 }
 
-case class Deposit(balance : BigDecimal) extends Account {
-  def available = balance > 0
+case class Deposit(accountNumber : String, balance : BigDecimal) extends Account {
+  def canDraw = balance > 0
 }
 
 //very, very simple and limited - each account has only one security
-case class Depot(security : Security, volume : Long) extends Account {
-  def available = volume > 0
+case class Depot(accountNumber : String, security : Security, volume : Long) extends Account {
+  def canDraw = volume > 0
 }
