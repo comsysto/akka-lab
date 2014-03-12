@@ -22,5 +22,7 @@ case class Ask(security: Security, volume: Long, price: BigDecimal) extends Orde
 }
 
 
+case class SuccessfulTrade(volume: Long, price: BigDecimal)
+
 
 

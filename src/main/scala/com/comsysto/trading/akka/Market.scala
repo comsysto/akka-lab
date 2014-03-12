@@ -34,7 +34,7 @@ class Market(val orderRouter : ActorRef, var depot : Depot, var deposit : Deposi
   def receive = {
     case ListSecuritiesResponse(s) => tradedSecurities = s
     case Open => {
-      context.system.scheduler.schedule(100.milliseconds, 100.milliseconds, self, TradeSecurity)
+      context.system.scheduler.schedule(100.milliseconds, 400.milliseconds, self, TradeSecurity)
       context.become(open)
     }
   }

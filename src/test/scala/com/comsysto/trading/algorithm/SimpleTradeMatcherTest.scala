@@ -1,7 +1,7 @@
 package com.comsysto.trading.algorithm
 
 import org.scalatest._
-import com.comsysto.trading.domain.{Security, Ask, Bid}
+import com.comsysto.trading.domain.{SuccessfulTrade, Security, Ask, Bid}
 
 class SimpleTradeMatcherTest extends WordSpecLike with Matchers {
   val daimler = new Security("DE0007100000")
@@ -10,14 +10,6 @@ class SimpleTradeMatcherTest extends WordSpecLike with Matchers {
 
 
   "SimpleTradeMatcher" should {
-    "leave price as is if no trades match" in {
-      tradeMatcher.calculatePrice(Nil, 5) should be(5)
-    }
-
-    "calculate average of trades" in {
-      tradeMatcher.calculatePrice(new SuccessfulTrade(10, 20) :: new SuccessfulTrade(10, 10) :: Nil, 5) should be(15)
-    }
-
     "should trade same price" in {
       val bid = new Bid(daimler, 1000, 100)
       val ask = new Ask(daimler, 1000, 100)

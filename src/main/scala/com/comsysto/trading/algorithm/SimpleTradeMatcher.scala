@@ -1,18 +1,19 @@
 package com.comsysto.trading.algorithm
 
-import com.comsysto.trading.domain.{Bid, Ask}
-
-private[algorithm] case class SuccessfulTrade(volume: Long, price: BigDecimal)
+import com.comsysto.trading.domain.{SuccessfulTrade, Bid, Ask}
+import akka.actor.ActorLogging
 
 trait SimpleTradeMatcher extends TradeMatcher {
 
+  //tradeObserver: TradeObserver =>
+  //Hack to provide logging...
+  //this: ActorLogging =>
 
-  override def doTrades(asks: List[Ask], bids: List[Bid], lastPrice : BigDecimal) : (List[Ask], List[Bid], BigDecimal) = {
+  override def doTrades(asks: List[Ask], bids: List[Bid]) : (List[Ask], List[Bid], List[SuccessfulTrade]) = {
     val sortedAsks = asks.sortWith(_.price < _.price)
     val sortedBids = bids.sortWith(_.price > _.price)
-
-    val (remainingAsks, remainingBids, successfulTrades) = doMatch(sortedAsks, sortedBids, List[SuccessfulTrade]())
-    (remainingAsks, remainingBids, calculatePrice(successfulTrades, lastPrice))
+    //log.info(s"Successful trades: $successfulTrades")
+    doMatch(sortedAsks, sortedBids, Nil)
   }
 
   private[algorithm] def doMatch(asks: List[Ask], bids: List[Bid], successfulTrades : List[SuccessfulTrade]) : (List[Ask], List[Bid], List[SuccessfulTrade]) = {
@@ -21,6 +22,7 @@ trait SimpleTradeMatcher extends TradeMatcher {
       topOfBook match {
         case (bid, ask) if bid.price < ask.price ⇒ (asks, bids, successfulTrades) // no match
         case (bid, ask) if bid.price >= ask.price && bid.volume == ask.volume ⇒
+          //trade(bid, ask)
           doMatch(asks.tail, bids.tail, new SuccessfulTrade(bid.volume, bid.price) :: successfulTrades)
         case (bid, ask) if bid.price >= ask.price && bid.volume < ask.volume ⇒
           val matchingAsk = ask.split(bid.volume)
@@ -38,17 +40,4 @@ trait SimpleTradeMatcher extends TradeMatcher {
       (asks, bids, successfulTrades)
     }
   }
-
-  private[algorithm] def calculatePrice(successfulTrades : List[SuccessfulTrade], lastPrice : BigDecimal) : BigDecimal = {
-    successfulTrades match {
-      case Nil => lastPrice
-      case _ => {
-        val components = successfulTrades.foldLeft[(BigDecimal, Long)]((0, 0)){ (res, trade) =>
-          (res._1 + (trade.price * trade.volume), res._2 + trade.volume)
-        }
-        components._1 / components._2
-      }
-    }
-  }
-
 }

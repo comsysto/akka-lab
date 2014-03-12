@@ -3,7 +3,7 @@ package com.comsysto.trading.akka
 import akka.actor.{Props, ActorRef, ActorLogging, Actor}
 import com.comsysto.trading.domain.{Ask, Bid, Security}
 import com.comsysto.trading.akka.OrderRouter.{ListSecuritiesResponse, ListSecurities}
-import com.comsysto.trading.algorithm.SimpleTradeMatcher
+import com.comsysto.trading.algorithm.{AverageMarketPriceCalculator, SimpleTradeMatcher}
 
 object OrderRouter {
   case object ListSecurities
@@ -23,15 +23,21 @@ class OrderRouter extends Actor with ActorLogging {
   override def preStart() = {
     for (security <- securities) {
       log.debug("Creating order book for " + security)
-      orderBooks(security) = context.actorOf(Props[OrderBook](new OrderBook(security) with SimpleTradeMatcher))
+      orderBooks(security) = context.actorOf(Props[OrderBook](new OrderBook(security) with SimpleTradeMatcher with AverageMarketPriceCalculator))
     }
   }
 
   def receive = {
     case ListSecurities => sender ! ListSecuritiesResponse(securities)
     //Just forward to the respective order book
-    case bid@Bid(sec, _, _) => orderBooks(sec) ! bid
-    case ask@Ask(sec, _, _) => orderBooks(sec) ! ask
+    case bid@Bid(sec, _, _) => {
+      log.info(s"Received bid for $sec")
+      orderBooks(sec) ! bid
+    }
+    case ask@Ask(sec, _, _) => {
+      log.info(s"Received ask for $sec")
+      orderBooks(sec) ! ask
+    }
 
     //case m@_ => log.warning("Unexpected message " + m)
   }
