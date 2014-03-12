@@ -23,8 +23,8 @@ object TradingSimulationApp extends App {
 
     val orderRouter = sys.actorOf(Props[OrderRouter])
     //TODO: Aggregate these participants below an abstract market?
-    val pa = sys.actorOf(Props[Market](new Market(orderRouter, new Depot(security, 0), new Deposit(BigDecimal.valueOf(3000000000)))), "participantA")
-    val pb = sys.actorOf(Props[Market](new Market(orderRouter, new Depot(security, 0), new Deposit(BigDecimal.valueOf(5000000)))), "participantB")
+    val pa = sys.actorOf(Props[Market](new Market(orderRouter, new Depot(security, 0), new Deposit(BigDecimal.valueOf(3000000000L)))), "participantA")
+    val pb = sys.actorOf(Props[Market](new Market(orderRouter, new Depot(security, 0), new Deposit(BigDecimal.valueOf(5000000L)))), "participantB")
     //bank should be more likely to sell securities
     val bank = sys.actorOf(Props[Market](new Market(orderRouter, new Depot(security, 5000000), new Deposit(BigDecimal.valueOf(1000)))), "bank")
 

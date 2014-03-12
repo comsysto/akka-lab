@@ -3,6 +3,7 @@ package com.comsysto.trading.akka
 import akka.actor.{Props, ActorRef, ActorLogging, Actor}
 import com.comsysto.trading.domain.{Ask, Bid, Security}
 import com.comsysto.trading.akka.OrderRouter.{ListSecuritiesResponse, ListSecurities}
+import com.comsysto.trading.algorithm.SimpleTradeMatcher
 
 object OrderRouter {
   case object ListSecurities
@@ -12,6 +13,7 @@ object OrderRouter {
 /**
  * Created by sturmm on 11.03.14.
  */
+//TODO: Create a real router (see page 283)
 class OrderRouter extends Actor with ActorLogging {
   //Poor mans SecuritiesRepository
   private val securities = List(Security("DE000BAY0017"))
@@ -21,7 +23,7 @@ class OrderRouter extends Actor with ActorLogging {
   override def preStart() = {
     for (security <- securities) {
       log.debug("Creating order book for " + security)
-      orderBooks(security) = context.actorOf(Props[OrderBook](new OrderBook(security)))
+      orderBooks(security) = context.actorOf(Props[OrderBook](new OrderBook(security) with SimpleTradeMatcher))
     }
   }
 
