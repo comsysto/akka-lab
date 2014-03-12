@@ -1,6 +1,6 @@
 package com.comsysto.trading.akka
 
-import akka.actor.{ActorRef, Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging}
 import com.comsysto.trading.domain._
 import com.comsysto.trading.algorithm.{MarketPriceCalculator, TradeMatcher}
 import scala.concurrent.duration._
@@ -8,6 +8,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object OrderBook {
   case object Trade
+
+  case class BidResponse(bid : Bid, volume : Long, price : BigDecimal)
+  case class AskResponse(ask : Ask, volume : Long, price : BigDecimal)
+
   case object ListPrice
   case class ListPriceResponse(currentPrice : BigDecimal)
 }
@@ -18,13 +22,12 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
 
   import com.comsysto.trading.akka.OrderBook._
 
-  //TODO: We have to store senders. As soon as an order is fulfilled we need to notify both parties so they update their balances accordingly
   var asks: List[Ask] = Nil
   var bids: List[Bid] = Nil
 
 
   override def preStart() = {
-    context.system.scheduler.schedule(1.seconds, 2.seconds, self, Trade)
+    context.system.scheduler.schedule(1.seconds, 1.seconds, self, Trade)
   }
 
   override def receive = {
@@ -35,8 +38,8 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
 
       recalculate() foreach {
         case t => {
-          context.actorSelection(s"/user/" + t.bid.depot.accountNumber) ! t
-          context.actorSelection(s"/user/" + t.ask.depot.accountNumber) ! t
+          context.actorSelection(s"/user/" + t.bid.depot.accountNumber) ! BidResponse(t.bid, t.volume, t.price)
+          context.actorSelection(s"/user/" + t.ask.depot.accountNumber) ! AskResponse(t.ask, t.volume, t.price)
         }
       }
 
@@ -47,7 +50,7 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
 
   private def recalculate() : List[SuccessfulTrade] = {
     val (newAsks, newBids, successfulTrades) = doTrades(asks, bids)
-    log.info(s"Successful trades: $successfulTrades")
+    //log.info(s"Successful trades: $successfulTrades")
 
     asks = newAsks
     bids = newBids

@@ -1,44 +1,45 @@
 package com.comsysto.trading.akka
 
-import akka.actor.{Props, ActorRef, ActorLogging, Actor}
-import com.comsysto.trading.domain.{Ask, Bid, Security}
-import com.comsysto.trading.akka.OrderRouter.{ListSecuritiesResponse, ListSecurities}
+import akka.actor.{ActorContext, SupervisorStrategy, Props, ActorRef}
+import com.comsysto.trading.domain.Order
 import com.comsysto.trading.algorithm.{AverageMarketPriceCalculator, SimpleTradeMatcher}
+import akka.routing._
+import akka.dispatch.Dispatchers
+import com.comsysto.trading.domain.Security
+import akka.routing.Destination
 
 object OrderRouter {
+
   case object ListSecurities
   case class ListSecuritiesResponse(securities : List[Security])
+
+  def apply(securities : List[Security]) = new OrderRouter(securities)
 }
 
 /**
  * Created by sturmm on 11.03.14.
  */
-//TODO: Create a real router (see page 283)
-class OrderRouter extends Actor with ActorLogging {
-  //Poor mans SecuritiesRepository
-  private val securities = List(Security("DE000BAY0017"))
-
+class OrderRouter(val securities : List[Security]) extends RouterConfig {
   private val orderBooks = scala.collection.mutable.Map.empty[Security, ActorRef]
 
-  override def preStart() = {
-    for (security <- securities) {
-      log.debug("Creating order book for " + security)
-      orderBooks(security) = context.actorOf(Props[OrderBook](new OrderBook(security) with SimpleTradeMatcher with AverageMarketPriceCalculator))
-    }
-  }
+  override def supervisorStrategy = SupervisorStrategy.defaultStrategy
 
-  def receive = {
-    case ListSecurities => sender ! ListSecuritiesResponse(securities)
-    //Just forward to the respective order book
-    case bid@Bid(_, sec, _, _) => {
-      log.info(s"Received bid for $sec")
-      orderBooks(sec) ! bid
-    }
-    case ask@Ask(_, sec, _, _) => {
-      log.info(s"Received ask for $sec")
-      orderBooks(sec) ! ask
+  override def routerDispatcher = Dispatchers.DefaultDispatcherId
+
+
+  override def createRoute(routeeProvider: RouteeProvider) : Route = {
+    val orderBooksForSecurities = securities.map { security =>
+      val orderBookForSecurity = routeeProvider.context.actorOf(Props[OrderBook](
+        new OrderBook(security) with SimpleTradeMatcher with AverageMarketPriceCalculator))
+      orderBooks(security) = orderBookForSecurity
+      orderBookForSecurity
     }
 
-    //case m@_ => log.warning("Unexpected message " + m)
+    routeeProvider.registerRoutees(orderBooksForSecurities)
+
+    {
+      case (sender, message: Order) => List(Destination(sender, orderBooks(message.security)))
+      case (sender, message: Broadcast) => orderBooksForSecurities map (Destination(sender, _))
+    }
   }
 }
