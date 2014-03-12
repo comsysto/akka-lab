@@ -52,9 +52,21 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
     val (newAsks, newBids, successfulTrades) = doTrades(asks, bids)
     //log.info(s"Successful trades: $successfulTrades")
 
+    (bids, asks) match {
+      case (Nil, Nil) => log.info("Not more bids and asks left!")
+      case (x, Nil) => log.info("Not more asks left!")
+      case (Nil, x) => log.info("Not more bids left!")
+      case (b, a) => {
+        val bidMax = b.map(_.price).max
+        val askMin = a.map(_.price).min
+        log.info(s"bids max: $bidMax, asks min: $askMin")
+      }
+    }
+
     asks = newAsks
     bids = newBids
     currentPrice = calculatePrice(successfulTrades, currentPrice)
+
     log.info(s"Current price for $security is $currentPrice")
     successfulTrades
   }

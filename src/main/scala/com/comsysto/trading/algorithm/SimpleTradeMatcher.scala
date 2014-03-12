@@ -1,6 +1,7 @@
 package com.comsysto.trading.algorithm
 
 import com.comsysto.trading.domain.{SuccessfulTrade, Bid, Ask}
+import scala.annotation.tailrec
 
 trait SimpleTradeMatcher extends TradeMatcher {
 
@@ -10,7 +11,7 @@ trait SimpleTradeMatcher extends TradeMatcher {
     doMatch(sortedAsks, sortedBids, Nil)
   }
 
-  private[algorithm] def doMatch(asks: List[Ask], bids: List[Bid], successfulTrades : List[SuccessfulTrade]) : (List[Ask], List[Bid], List[SuccessfulTrade]) = {
+  @tailrec private[algorithm] final def doMatch(asks: List[Ask], bids: List[Bid], successfulTrades : List[SuccessfulTrade]) : (List[Ask], List[Bid], List[SuccessfulTrade]) = {
     if (!bids.isEmpty && !asks.isEmpty) {
       val topOfBook = (bids.head, asks.head)
       topOfBook match {

@@ -23,7 +23,7 @@ object MarketParticipant {
 /**
  * Created by sturmm on 11.03.14.
  */
-class MarketParticipant(val orderBook : ActorRef, var depot : Depot, var deposit : Deposit) extends Actor with ActorLogging with Stash {
+class MarketParticipant(id: Int, val orderBook : ActorRef, var depot : Depot, var deposit : Deposit) extends Actor with ActorLogging with Stash {
 
   //TODO: Consider storing trades in flight (wait on in-flight trades before closing the market?)
   var currentPrice : BigDecimal = 105
@@ -81,6 +81,7 @@ class MarketParticipant(val orderBook : ActorRef, var depot : Depot, var deposit
         sellSecurity()
       } else {
         // neither money nor security - waiting for open trades
+        log.info(s"[$id]No money and securities left.")
       }
     } else if (depot.canDraw) {
       sellSecurity()
