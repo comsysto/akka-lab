@@ -116,7 +116,7 @@ class PingPongActor extends Actor with ActorLogging {
 }
 ```
 
-Based on a [Akka Remote Hello-World example](http://alvinalexander.com/scala/simple-akka-actors-remote-example) we wrote a "client" and a "server" application and configured them using Typesafe Config. One of the Actors just needs to kick off the game and then both ping-pong happily ever after. As the message protocol is very simple, the application is well-suited to measure Akka message latencies. Hence, we attached a timestamp to each message using `System#nanoTime()`. However, as stated in the [Javadoc of System#nanoTime()](http://docs.oracle.com/javase/7/docs/api/java/lang/System.html#nanoTime%28%29), it is only suited for time measurements within a single JVM. So, instead of measuring only the latency from one actor to the other, we decided to measure roundtrip time which allows us to use System#nanoTime(). To measure them, both messages are extended by a timestamp property and receive is changed accordingly:
+Based on an [Akka Remote Hello-World example](http://alvinalexander.com/scala/simple-akka-actors-remote-example) we wrote a "client" and a "server" application and configured them using Typesafe Config. One of the Actors just needs to kick off the game and then both ping-pong happily ever after. As the message protocol is very simple, the application is well-suited to measure Akka message latencies. Hence, we attached a timestamp to each message using `System#nanoTime()`. However, as stated in the [Javadoc of System#nanoTime()](http://docs.oracle.com/javase/7/docs/api/java/lang/System.html#nanoTime%28%29), it is only suited for time measurements within a single JVM. So, instead of measuring only the latency from one actor to the other, we decided to measure roundtrip time which allows us to use `System#nanoTime()` safely. To measure them, both messages are extended by a timestamp property and `receive` is changed accordingly:
 
 ```
 def receive = {
@@ -148,7 +148,7 @@ Finally, we wanted to try a more involved example which needs more domain modeli
 
 ### The Domain
 
-The purpose of the application is to simulate market participants which want to buy securities. Each participant can place orders: buyers place a bid, sellers place an ask. Bids and asks are matched in an orderbook (one per security) and a trade is made. The algorithm is based on [Akka's OrderBook.scala](https://github.com/akka/akka/blob/master/akka-actor-tests/src/test/scala/akka/performance/trading/domain/Orderbook.scala). [TODO: Describe matching algorithm very shortly]
+The purpose of the application is to simulate market participants which want to buy securities. Each participant can place orders: buyers place a bid, sellers place an ask. Bids and asks are matched in an orderbook (one per security) and a trade is made. The algorithm is based on [Akka's OrderBook.scala](https://github.com/akka/akka/blob/master/akka-actor-tests/src/test/scala/akka/performance/trading/domain/Orderbook.scala). It basically tries to match the highest bids with the lowest asks as long as possible. If an order cannot be fulfilled entirely, it is split.
 
 All participants' goods are tracked in accounts: securities are kept in a depot, cash is kept in a deposit. Each account is charged as soon as an order is placed to avoid overcommitment. Upon fulfillment of an order the goods are credited.
 
@@ -156,38 +156,35 @@ All participants' goods are tracked in accounts: securities are kept in a depot,
 
 The application consists of two actors which are coupled by a custom [router](http://doc.akka.io/docs/akka/snapshot/scala/routing.html):
 
-* **`MarketParticipant`**: A market participants periodically places orders. It randomly decides whether to place a bid or an ask and also randomly decides on the offered price based on the current market price of the security.
+* **`MarketParticipant`**: A market participant periodically places orders. It randomly decides whether to place a bid or an ask and also randomly decides on the offered price which is based on the current market price of the security including a random spread.
 * **`OrderBook`**: There is one `OrderBook` actor for each security within the system to match trades. It takes orders and periodically matches them. Afterwards, it notifies the involved `MarketParticipant`s of the successful trade.
-* **`OrderRouter`**: We decided to couple `MarketParticipant`s and `OrderBooks`s via a custom router. During startup the router creates `OrderBooks` actors. When an order arrives, it decides which `OrderBook` is responsible and forwards the order.
+* **`OrderRouter`**: We decided to couple `MarketParticipant`s and `OrderBooks`s via a custom router. During startup the router creates `OrderBook` actors. When an order arrives, it decides which `OrderBook` is responsible and forwards the order.
+
+![System Structure of the Trading System](blog/TradingAppActors.png "System Structure of the Trading System")
 
 ### Implementation
 
-[TODO: Mention Cake pattern, Typesafe Config]
-The simulation exists in two flavours: An in-memory implementation which is bootstrapped in `TradingSimulationnApp` and a distributed implementation which is implemented in `RemoteClientApp` which simulates the market and `RemoteClientApp` which simulates order books.
+The simulation exists in two flavours: A single-node implementation which is bootstrapped in `TradingSimulationApp` and a distributed implementation which is implemented in `RemoteClientApp` which simulates the market and `RemoteClientApp` which simulates order books.
 
-#### Custom Routing
+To configure various aspects of the application such as the securities or number or market participants we used Typesafe Config. Wiring of specific implementation is achieved with the [Cake pattern](http://jonasboner.com/2008/10/06/real-world-scala-dependency-injection-di/).
 
 ### Open Issues
 
-Although we very able to try a lot of features (
-
+We very able to try a lot of features of Akka such as become/unbecome, stashing, custom routers or remoting. However, the domain allows to expand the example application further in many different aspects which we'll describe shortly below.
 
 ### Domain
-- fault tolerance
--- replication
--- acknowledgements
-- we're deleting money
-- Order canceling
-- Statistics
 
-### Technology
-- Monitoring
-- Statistics
-- Performance
-- Scaling
-- remote addressing
-- cusltering
+Regarding the domain we see the following areas of improvement:
+
+* **Losing money**: The application holds money back in case an order is split or even evaporates it if the buying price differs from the bidding price. This hasn't been much of an issue for our short-running simulation but it clearly is a rather severe problem for a real application. This issue can be solved in different ways. For example, we could cancel orders after a specific amount of time if they cannot be fulfilled or just reserve money instead of really charging the deposit.
+* **Acknowledgements**: Acknowledgements of order receipt would allow for easier state tracking by market participants.
+
+### Technological
+
+* **Replication and fault tolerance**: Currently, if an `OrderBook` actor would fail, all open trades and the market valuation would be lost. Using a dedicated [supervisor node](http://doc.akka.io/docs/akka/snapshot/general/supervision.html) and a replication mechanism for each `OrderBook` would make the application far more reliable.
+* **Monitoring**: The demo could include a monitoring mechanism to visualize different business metrics such as current market prices, number of open orders, or aggregated revenue and also technical metrics such as messages delivered, message latency and throughput of the system.
+* **Performance**: The system is not tuned for performance at all. Based on the monitoring and different scenarios we could look into bottlenecks and tweak the system based on the [vast configuration options of Akka](http://doc.akka.io/docs/akka/snapshot/general/configuration.html).
 
 ## Final Thoughts
 
-....
+Although our three lab days were very productive we barely scratched the surface of what's possible with Akka. As you may have guessed from reading this blog post we struggled with some aspects but that's a good sign: After all, we only learn something new by struggling first. We had a lot of fun in this lab and we're looking forward to the next one to explore further aspects of Akka.
