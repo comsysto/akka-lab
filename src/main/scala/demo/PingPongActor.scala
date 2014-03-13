@@ -1,6 +1,6 @@
-package com.comsysto.trading.akka.remoting
+package demo
 
-import akka.actor.{ActorLogging, ActorRef, Actor}
+import akka.actor.{ActorLogging, Actor}
 
 object PingPongActor {
   case class Ping(message : String, counter : Long)
@@ -8,7 +8,6 @@ object PingPongActor {
 }
 
 class PingPongActor extends Actor with ActorLogging {
-  import com.comsysto.trading.akka.remoting.PingPongActor._
 
   def receive = {
     case Ping(m, c) => {
