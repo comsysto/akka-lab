@@ -10,7 +10,12 @@ import demo.PingPongActor
  */
 object PingPongServer extends App {
 
-  val system = ActorSystem("PingPong", ConfigFactory.load("application-remoting.conf"))
+  val akkaConf = ConfigFactory.load("application-remoting.conf").withOnlyPath("akka");
+  val serverConf = ConfigFactory.load("application-remoting.conf").getConfig("server");
+
+  val conf = serverConf.withFallback(akkaConf)
+
+  val system = ActorSystem("PingPong", conf)
 
   val actor = system.actorOf(Props[PingPongActor], "ping")
 

@@ -4,7 +4,13 @@ import akka.actor.{Props, ActorSystem}
 import com.typesafe.config.ConfigFactory
 
 object PingPongClient extends App {
-  val sys = ActorSystem("PingPong", ConfigFactory.load("application-remoting.conf"))
+
+  val akkaConf = ConfigFactory.load("application-remoting.conf").withOnlyPath("akka");
+  val clientConf = ConfigFactory.load("application-remoting.conf").getConfig("client");
+
+  val conf = clientConf.withFallback(akkaConf)
+
+  val sys = ActorSystem("PingPong", conf)
 
   {
 
