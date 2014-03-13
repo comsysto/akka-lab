@@ -42,7 +42,7 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
       log.info(s"Added Bid into OrderBook[${security.name}] after $duration")
     }
     case Trade => {
-      log.info(s"Triggering market price recalculation for $security")
+      log.debug(s"Triggering market price recalculation for $security")
 
       recalculate() foreach {
         case t => {
@@ -61,13 +61,13 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
     //log.info(s"Successful trades: $successfulTrades")
 
     (bids, asks) match {
-      case (Nil, Nil) => log.info("Not more bids and asks left!")
-      case (x, Nil) => log.info("Not more asks left!")
-      case (Nil, x) => log.info("Not more bids left!")
+      case (Nil, Nil) => log.debug("Not more bids and asks left!")
+      case (x, Nil) => log.debug("Not more asks left!")
+      case (Nil, x) => log.debug("Not more bids left!")
       case (b, a) => {
         val bidMax = b.map(_.price).max
         val askMin = a.map(_.price).min
-        log.info(s"bids max: $bidMax, asks min: $askMin")
+        log.debug(s"bids max: $bidMax, asks min: $askMin")
       }
     }
 
@@ -75,7 +75,7 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
     bids = newBids
     currentPrice = calculatePrice(successfulTrades, currentPrice)
 
-    log.info(s"Current price for $security is $currentPrice")
+    log.debug(s"Current price for $security is $currentPrice")
     successfulTrades
   }
 }
