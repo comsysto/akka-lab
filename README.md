@@ -59,10 +59,6 @@ We have want to create a single ActorSystem called **routing** having a `Receive
 The [`Reciever`](demo/RoutingStrategies.scala) is does recieve messages of type `Message(String)` and prints whatever the message parameter is. After recieving a message we're toggeling the state of our reciever by using Akka's `become` mechanism. So here is the definition of our `Reciever` actor:
 
 ```
-  object Receiver {
-    case class Message(msg: String)
-  }
-
   class Receiver(timeout: Long) extends Actor with ActorLogging {
     import demo.RoutingStrategies.Receiver._
     
@@ -89,9 +85,37 @@ The [`Reciever`](demo/RoutingStrategies.scala) is does recieve messages of type 
     }
   }
 ```
+As mentioned before the Actor simply prints out the message. After he recieved a message he toggles his state from `fastRecieve` to `slowRecieve` and vice versa to simple simulate more heavy execution. Now that our system is complete we can start sending Messages to `single` and `router`:
+
+```
+// Sending a message by using actors path
+sys.actorSelection("user/single") ! Message("Hello You, by path! [fast]") // fast really?
+
+// Sending a message by using ActorRef
+single ! Message("Hello You! [slow]") // slow really?
+single ! Message("Hello You! [fast]") // fast really?
+
+// Sending a message by using Router
+router ! Message("Hello Anybody! [fast]") 	// route message to next Reciever actor
+router ! Broadcast(Message("Hello World! [1xslow, 9xfast]")) // route message to all Reciever actors
+```
+
+Right here we got our first problem. As you can see, we've expected that Akka preserves the order of the messages and that is the truth... as long as you don't mix up sending messages by `ActorRef` and `ActorSelection`. In this case the only guarantee we have is, that all messages sent to an `ActorRef` will have a defined order and all messages sent by `ActorSelection` have a defined order too. But between these two mechanism of addressing messages there is no gurantee for the order.
+
+The last thing that we want to try is to shutdown the `ActorSystem` after all messages has been processed. And because we're in a multithreaded environemt we cannot simply shutdown the system at the end. We can call `system.shutdown()` and then use `system.awaitTermination()` to wait until all of currently active executions are finished, but we don't know whether all messages has been processed or not. For this reason Akka provides the `gracefulShutdown` mechanism:
+
+Using it means special Message , the `PoisonPill`, takes place on top of the Actors current mailbox and all messages below will be processed and when the `PoisonPill` is processed the Actor terminates and sends a `Terminated` message. After we picked up all `Terminated` messages we can shutdown the system safely:
+
+```
+for {
+  routerTerminated  <- gracefulStop(router, duration, Broadcast(PoisonPill))
+  singleTerminated <- gracefulStop(single, duration)
+} {
+  sys.shutdown()
+}
+```
 
 ### PingPong: Remote Messages
-
 To try [remoting](http://doc.akka.io/docs/akka/snapshot/scala/remoting.html) in Akka, we have decided to play Actor ping-pong. The basic actor code is quite simple (simplified version):
 
 ```

@@ -54,14 +54,14 @@ object RoutingStrategies extends App {
     sys.actorSelection("user/single") ! Message("Another Message by path!")
 
     single ! Message("Hello You!")
-    single ! Message("Hello Block!")
+    single ! Message("Hello Block?")
 
     router ! Message("Hello Anybody!")
     router ! Broadcast(Message("Hello World!"))
 
     for {
-      routerSD  <- gracefulStop(router, duration)
-      singleSD <- gracefulStop(single, duration)
+      routerTerminated  <- gracefulStop(router, duration, Broadcast(PoisonPill))
+      singleTerminated <- gracefulStop(single, duration)
     } {
       sys.shutdown()
     }
