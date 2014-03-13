@@ -31,10 +31,18 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
   }
 
   override def receive = {
-    case ask@Ask(_, s, _, _) if s == security => asks = ask :: asks
-    case bid@Bid(_, s, _, _) if s == security => bids = bid :: bids
+    case ask@Ask(_, s, _, _) if s == security => {
+      asks = ask :: asks
+      val duration = (System.nanoTime() - ask.requested).nanos.toMicros
+      log.info(s"Added Ask into OrderBook[${security.name}] after $duration")
+    }
+    case bid@Bid(_, s, _, _) if s == security => {
+      bids = bid :: bids
+      val duration = (System.nanoTime() - bid.requested).nanos.toMicros
+      log.info(s"Added Bid into OrderBook[${security.name}] after $duration")
+    }
     case Trade => {
-      log.debug(s"Triggering market price recalculation for $security")
+      log.info(s"Triggering market price recalculation for $security")
 
       recalculate() foreach {
         case t => {

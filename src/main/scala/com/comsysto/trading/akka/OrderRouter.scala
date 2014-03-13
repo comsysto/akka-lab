@@ -7,19 +7,22 @@ import akka.routing._
 import akka.dispatch.Dispatchers
 import com.comsysto.trading.domain.Security
 import akka.routing.Destination
+import com.comsysto.trading.provider.SecuritiesProvider
 
 object OrderRouter {
+
 
   case object ListSecurities
   case class ListSecuritiesResponse(securities : List[Security])
 
-  def apply(securities : List[Security]) = new OrderRouter(securities)
 }
 
 /**
  * Created by sturmm on 11.03.14.
  */
-class OrderRouter(val securities : List[Security]) extends RouterConfig {
+class OrderRouter extends RouterConfig {
+  this: SecuritiesProvider =>
+
   private val orderBooks = scala.collection.mutable.Map.empty[Security, ActorRef]
 
   override def supervisorStrategy = SupervisorStrategy.defaultStrategy

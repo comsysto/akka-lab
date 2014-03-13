@@ -2,7 +2,7 @@ package com.comsysto.trading.akka
 
 import akka.actor._
 import akka.pattern._
-import akka.routing.{Broadcast, RoundRobinRouter}
+import akka.routing.RoundRobinRouter
 import akka.util.Timeout
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.comsysto.trading.domain.{Deposit, Security, Depot}
@@ -10,15 +10,13 @@ import java.util.UUID
 import scala.util.Random
 import com.typesafe.config.ConfigFactory
 import com.comsysto.trading.akka.MarketParticipant.Open
+import com.comsysto.trading.provider.{SimpleSecuritiesProvider, ConfigProvider}
 
-object TradingSimulationApp extends App {
+object TradingSimulationApp extends App with ConfigProvider with SimpleSecuritiesProvider {
 
   val random = new Random()
-  val config = ConfigFactory.load("simulation.conf")
 
   //Poor mans SecuritiesRepository
-  private val securities = List(Security("DE000BAY0017"))
-
   val sys = ActorSystem("TradingSystem")
 
   {
@@ -28,7 +26,7 @@ object TradingSimulationApp extends App {
 
 
     //TODO: We want to initialize
-    val orderBook = sys.actorOf(Props[OrderBook](null).withRouter(OrderRouter(securities)))
+    val orderBook = sys.actorOf(Props[OrderBook](null).withRouter(new OrderRouter with SimpleSecuritiesProvider), "orderbooks")
 
     val participants = for {
       i <- 1 to config.getInt("com.comsysto.trading.participants.count")
@@ -38,7 +36,8 @@ object TradingSimulationApp extends App {
       case p: ActorRef => p ! Open
     }
 
-    //let's suppose a business day takes 20 seconds
+//    let's suppose a business day takes 20 seconds
+//
 //    Thread.sleep((60 seconds) toMillis)
 //
 //    for {
@@ -67,7 +66,7 @@ object TradingSimulationApp extends App {
     new MarketParticipant(
       id = id,
       orderBook = orderRouter,
-      depot = new Depot(depotAccountNumber, securities.head, depotBalance),
+      depot = new Depot(depotAccountNumber, Random.shuffle(securities).head, depotBalance),
       deposit = new Deposit("9" + depotAccountNumber, depositBalance)
     )
   }

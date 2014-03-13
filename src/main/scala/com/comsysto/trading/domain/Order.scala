@@ -17,7 +17,7 @@ sealed trait Order {
   val price: BigDecimal
   val depot : Depot
   //TODO: Better use System.nanoTime (typically higher resolution)?
-  val requested = new Date()
+  val requested = System.nanoTime();
 }
 
 case class Bid(depot : Depot, security: Security, volume: Long, price: BigDecimal) extends Order {
