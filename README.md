@@ -41,7 +41,7 @@ You can easily import the project into IntelliJ or use sbt plugins to generate p
 
 After importing the project we're implementing our first basic ActorSystem. It's structure will look as depicted below:
 
-![Simple Actor Systems Structure](blog/Basic Actor System.png "Simple Actor Systems Structure")
+![Simple Actor Systems Structure](blog/Basic_ActorSystem.png "Simple Actor Systems Structure")
 
 We have want to create a single ActorSystem called **routing** having a `Receiver` Actor called **single** next to a `RoundRobinRouter` **router** with 10 children of type `Receiver`. All we need to do is creating instantiating the system and creating both the children **single** and **router**. The `RoundRobinRouter` creates it's children by itself:
 
