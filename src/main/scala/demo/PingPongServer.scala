@@ -9,8 +9,8 @@ import PingPongActor._
  */
 object PingPongServer extends App {
 
-  val akkaConf = ConfigFactory.load("application-remoting.conf").withOnlyPath("akka");
-  val serverConf = ConfigFactory.load("application-remoting.conf").getConfig("server");
+  val akkaConf = ConfigFactory.load("application-remoting.conf").withOnlyPath("akka")
+  val serverConf = ConfigFactory.load("application-remoting.conf").getConfig("server")
 
   val conf = serverConf.withFallback(akkaConf)
 
