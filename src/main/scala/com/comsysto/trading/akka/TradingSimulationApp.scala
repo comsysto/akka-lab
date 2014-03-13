@@ -1,14 +1,10 @@
 package com.comsysto.trading.akka
 
 import akka.actor._
-import akka.pattern._
-import akka.routing.RoundRobinRouter
 import akka.util.Timeout
-import scala.concurrent.ExecutionContext.Implicits.global
-import com.comsysto.trading.domain.{Deposit, Security, Depot}
+import com.comsysto.trading.domain.{Deposit, Depot}
 import java.util.UUID
 import scala.util.Random
-import com.typesafe.config.ConfigFactory
 import com.comsysto.trading.akka.MarketParticipant.Open
 import com.comsysto.trading.provider.{SimpleSecuritiesProvider, ConfigProvider}
 
@@ -16,7 +12,6 @@ object TradingSimulationApp extends App with ConfigProvider with SimpleSecuritie
 
   val random = new Random()
 
-  //Poor mans SecuritiesRepository
   val sys = ActorSystem("TradingSystem")
 
   {
@@ -37,7 +32,6 @@ object TradingSimulationApp extends App with ConfigProvider with SimpleSecuritie
     }
 
 //    let's suppose a business day takes 20 seconds
-//
 //    Thread.sleep((60 seconds) toMillis)
 //
 //    for {

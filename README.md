@@ -12,29 +12,45 @@
 
 It's time to start :)
 
+
+## Bootrapping an Akka app
+
 * Akka Version: 2.2.3
 * Scala Version 2.10
 
-# Bootrapping an Akka app
 
-## Simple Message passing
+### Simple Message passing
 
-## PingPong: Remote Messages
+### PingPong: Remote Messages
 
-## Aside: Typesafe Config
+### Aside: Typesafe Config
 
-# The Trading App
+## The Trading App
 
 - The basic idea comes here
 
-## The Domain // Akka trading example
+### The Domain // Akka trading example
 
-## Modeling an Akka app
+### Modeling an Akka app
 
-## Implementation
+### Implementation
 
-### Custom Router
+#### Custom Routing
 
-###
+## Further Doings
 
-# Further Doings
+### Domain
+- fault tolerance
+-- replication
+-- acknowledgements
+- we're deleting money
+- Order canceling
+- Statistics
+
+### Technology
+- Monitoring
+- Statistics
+- Performance
+- Scaling
+- remote addressing
+- cusltering
