@@ -3,7 +3,7 @@ package com.comsysto.trading.algorithm
 import com.comsysto.trading.domain.{Ask, Bid, SuccessfulTrade}
 import org.scalatest.{Matchers, WordSpecLike}
 
-class AverageMarketPriceCalculatorTest extends WordSpecLike with Matchers {
+class AverageMarketPriceCalculatorSpec extends WordSpecLike with Matchers {
   val anyBid : Bid = null
   val anyAsk : Ask = null
 

@@ -40,8 +40,6 @@ object RoutingStrategies extends App {
     }
   }
 
-
-
   {
     import scala.concurrent.duration._
     val duration = 3.seconds

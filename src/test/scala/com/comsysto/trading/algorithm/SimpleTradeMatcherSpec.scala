@@ -7,7 +7,7 @@ import com.comsysto.trading.domain.Bid
 import com.comsysto.trading.domain.Ask
 import com.comsysto.trading.domain.SuccessfulTrade
 
-class SimpleTradeMatcherTest extends WordSpecLike with Matchers {
+class SimpleTradeMatcherSpec extends WordSpecLike with Matchers {
   val daimler = new Security("DE0007100000")
 
   val bidder = new Depot("0815", daimler, 100000)
