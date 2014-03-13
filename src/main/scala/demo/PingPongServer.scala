@@ -3,7 +3,6 @@ package demo
 import akka.actor.{Props, ActorSystem}
 import com.typesafe.config.ConfigFactory
 import PingPongActor._
-import demo.PingPongActor
 
 /**
  * Created by sturmm on 13.03.14.
