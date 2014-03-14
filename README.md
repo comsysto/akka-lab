@@ -186,6 +186,10 @@ The application consists of two actors which are coupled by a custom [router](ht
 
 ![System Structure of the Trading System](blog/TradingAppActors.png "System Structure of the Trading System")
 
+The diagram below shows the message flow of a trade through the system. The market participant place a bid and an ask through the `OrderRouter` which forwards the messages to the corresponding `OrderBook` for this security. It matches the orders and replies to both parties with `BidResponse` and `AskResponse` on success. The can in turn then adjust their account balances accordingly.
+
+![Message flow through the application](blog/TradingAppMessageFlow.png "Message flow through the application")
+
 ### Implementation
 
 The simulation exists in two flavours: A single-node implementation which is bootstrapped in `TradingSimulationApp` and a distributed implementation which is implemented in `RemoteClientApp` which simulates the market and `RemoteClientApp` which simulates order books.
