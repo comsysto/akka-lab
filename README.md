@@ -23,7 +23,7 @@ name := "The Akka Lab"
 
 version := "0.1"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.10.4	"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.2.3",
@@ -165,6 +165,44 @@ Our takeaways for this example:
 
 
 ### Aside: Typesafe Config
+
+We found that [typesafe config](https://github.com/typesafehub/config) is noteworthy becasue it has a good to read syntax and easy to use Scala/Java API and it is Akka's configuration mechanism. There are a lot of switches where you can tune your Akka application without changing a single line of code. Tpesafe config has a JSON like syntax called HOCON that allows to use different data types e.g. numbers, strings, arrays or nested "objects". It has also built in support for placeholder replacement. You can use it to override Akka defaults and to provide configuration for you own application too.
+
+So here a structural excerpt from our application config:
+
+```
+  # overriding akka defaults
+  akka {
+    ...
+  }
+
+  # server side akka overrides
+  server {
+    akka {
+      ...
+    }
+  }
+
+  # client side akka overrides
+  client {
+    ...
+  }
+```
+On server side we're loading our config using the following code snippet:
+
+```
+  // load akka defaults, ignore others
+  val akkaConf = ConfigFactory.load("application-remoting.conf").withOnlyPath("akka")
+  // load server default
+  val serverConf = ConfigFactory.load("application-remoting.conf").getConfig("server")
+
+  // merge server and akka config
+  val conf = serverConf.withFallback(akkaConf)
+
+```
+
+First we are loading the default configuration into `akkaConf` and afterwards the dedicated server config into `serverConf`. Then we merge them together into one single config called `conf`. Now, when we're reading a property from `conf`, we will get the one from Akka block in server section if it is present or the one from the root Akka block if not. The same way Akka reads the defaults from `reference.conf` and overrides them with the properties from out of `application.conf` if a so named file is present in classpath. If you want to take a look into what defaults are configured you can take a look into the `reference.conf` or into the [Akka documentation](http://doc.akka.io/docs/akka/snapshot/general/configuration.html).
+
 
 ## The Trading App
 

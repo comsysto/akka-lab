@@ -8,6 +8,6 @@ trait ConfigProvider {
 
 object ApplicationConfiguration {
 
-  val appConfig = ConfigFactory.load("simulation.conf")
+  val appConfig = ConfigFactory.load("simulation.conf").getConfig("com.comsysto.trading")
 
 }

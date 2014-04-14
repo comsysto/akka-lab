@@ -24,7 +24,7 @@ object TradingSimulationApp extends App with ConfigProvider with SimpleSecuritie
     val orderBook = sys.actorOf(Props[OrderBook](null).withRouter(new OrderRouter with SimpleSecuritiesProvider), "orderbooks")
 
     val participants = for {
-      i <- 1 to config.getInt("com.comsysto.trading.participants.count")
+      i <- 1 to config.getInt("participants.count")
     } yield createMarketParticipant(orderBook, i)
 
     participants foreach {
@@ -46,8 +46,8 @@ object TradingSimulationApp extends App with ConfigProvider with SimpleSecuritie
 
   def createMarketParticipant(orderBook: ActorRef, id: Int) : ActorRef = {
     val accountNumber = UUID.randomUUID().toString
-    val depot = random(config.getLong("com.comsysto.trading.participants.depot.min"), config.getLong("com.comsysto.trading.participants.depot.max"))
-    val deposit = random(config.getLong("com.comsysto.trading.participants.deposit.min"), config.getLong("com.comsysto.trading.participants.deposit.max"))
+    val depot = random(config.getLong("participants.depot.min"), config.getLong("participants.depot.max"))
+    val deposit = random(config.getLong("participants.deposit.min"), config.getLong("participants.deposit.max"))
 
     sys.actorOf(Props[MarketParticipant](createMarketParticipant(id, orderBook, accountNumber, depot, deposit)), accountNumber)
   }

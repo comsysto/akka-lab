@@ -8,7 +8,7 @@ import scala.collection.JavaConversions._
 object SecurityRepo extends ConfigProvider {
 
   lazy val securities: List[Security] = (for {
-    name <- config.getStringList("com.comsysto.trading.securities")
+    name <- config.getStringList("securities")
   } yield Security(name)).toList
 
 }
