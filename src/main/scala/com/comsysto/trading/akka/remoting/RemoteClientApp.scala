@@ -3,10 +3,10 @@ package com.comsysto.trading.akka.remoting
 import com.comsysto.trading.provider.{SimpleSecuritiesProvider, ConfigProvider}
 import scala.util.Random
 import akka.actor.{ActorRef, Props, ActorSystem}
-import com.comsysto.trading.akka.{MarketParticipant, OrderRouter, OrderBook}
+import com.comsysto.trading.akka.MarketParticipant
 import java.util.UUID
-import com.comsysto.trading.domain.{Security, Deposit, Depot}
-import com.comsysto.trading.akka.MarketParticipant.{TradeSecurity, Open}
+import com.comsysto.trading.domain.{Deposit, Depot}
+import com.comsysto.trading.akka.MarketParticipant.Open
 import com.typesafe.config.ConfigFactory
 import akka.util.Timeout
 import java.util.concurrent.TimeUnit
@@ -21,7 +21,6 @@ object RemoteClientApp extends App with ConfigProvider with SimpleSecuritiesProv
   val sys = ActorSystem("TradingSystem", ConfigFactory.load("application-remoting.conf"))
 
   {
-    import scala.concurrent.duration._
     implicit val timeout = Timeout.apply(3, TimeUnit.SECONDS)
 
     //TODO
