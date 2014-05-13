@@ -10,8 +10,9 @@ import com.comsysto.trading.domain.Security
 import akka.routing.Router
 import akka.routing.Broadcast
 import scala.collection.immutable.IndexedSeq
+import akka.actor.Actor.Receive
 
-object OrderRouter {
+object OrderRouterActor {
 
 
   case object ListSecurities
@@ -19,33 +20,47 @@ object OrderRouter {
 
 }
 
-/**
- * Created by sturmm on 11.03.14.
- */
-class OrderRouter extends Pool {
+class OrderRoutingActor extends Actor with ActorLogging{
   this: SecuritiesProvider =>
 
-  override def supervisorStrategy = SupervisorStrategy.defaultStrategy
+  val routingLogic = new OrderBookRoutingLogic()
 
-  override def routerDispatcher = Dispatchers.DefaultDispatcherId
+  val router = {
 
-  override def createRouter(system: ActorSystem): Router = {
-    val orderBooksForSecurities = securities.map { security =>
 
-        val orderBookForSecurity = system.actorOf(Props[OrderBook](
-          new OrderBook(security) with SimpleTradeMatcher with AverageMarketPriceCalculator))
+    val orderBooksForSecurities = securities.foreach { security =>
 
-      security -> orderBookForSecurity
+      val orderBookForSecurity = context.actorOf(Props[OrderBook](
+        new OrderBook(security) with SimpleTradeMatcher with AverageMarketPriceCalculator), security.name)
+
+       routingLogic.addOrderBook(security, orderBookForSecurity)
     }
-    new Router(new OrderBookRoutingLogic(orderBooksForSecurities.toMap))
+    new Router(routingLogic)
   }
 
-  override def resizer: Option[Resizer] = None
 
-  override def nrOfInstances: Int = securities.size
+  override def receive: Receive = {
+    case Terminated(a) => {
+      routingLogic.removeOrderBook(a) map {
+        s =>
+          val r = context.actorOf(Props[OrderBook](
+            new OrderBook(s) with SimpleTradeMatcher with AverageMarketPriceCalculator), s.name)
+          context watch r
+          routingLogic.addOrderBook(s, r)
+      }
+    }
+    case msg => {
+      router.route(msg, sender)
+    }
+  }
 }
 
-class OrderBookRoutingLogic(orderBooks: Map[Security, ActorRef]) extends RoutingLogic {
+
+
+class OrderBookRoutingLogic extends RoutingLogic {
+
+  private val orderBooks = scala.collection.mutable.Map.empty[Security, ActorRef]
+  private val reverseOrderBooks = scala.collection.mutable.Map.empty[ActorRef, Security]
 
   override def select(message: Any, routees: IndexedSeq[Routee]): Routee = {
     message match {
@@ -53,4 +68,28 @@ class OrderBookRoutingLogic(orderBooks: Map[Security, ActorRef]) extends Routing
       case msg: Broadcast => new SeveralRoutees(orderBooks.map( e => new ActorRefRoutee(e._2)).toIndexedSeq)
     }
   }
+
+  def addOrderBook(s: Security, a: ActorRef) ={
+    orderBooks.put(s, a)
+    reverseOrderBooks.put(a, s)
+  }
+
+  def removeOrderBook(s: Security) : Option[ActorRef] = {
+    val key = orderBooks.remove(s)
+    key map {
+      reverseOrderBooks remove _
+    }
+
+    key
+  }
+
+  def removeOrderBook(a: ActorRef) : Option[Security] = {
+    val key = reverseOrderBooks.remove(a)
+    key map {
+      orderBooks remove _
+    }
+
+    key
+  }
+
 }

@@ -9,7 +9,7 @@ import com.comsysto.trading.domain.Security
 import com.comsysto.trading.domain.Bid
 import com.comsysto.trading.domain.Depot
 import com.comsysto.trading.domain.Ask
-import com.comsysto.trading.akka.OrderRouter.ListSecuritiesResponse
+import com.comsysto.trading.akka.OrderRouterActor.ListSecuritiesResponse
 import com.comsysto.trading.domain.Deposit
 import com.comsysto.trading.akka.OrderBook.{AskResponse, BidResponse}
 
