@@ -9,6 +9,7 @@ import com.comsysto.trading.domain.{Security, Deposit, Depot}
 import com.comsysto.trading.akka.MarketParticipant.{TradeSecurity, Open}
 import com.typesafe.config.ConfigFactory
 import akka.util.Timeout
+import java.util.concurrent.TimeUnit
 
 /**
   * Created by sturmm on 13.03.14.
@@ -21,8 +22,7 @@ object RemoteClientApp extends App with ConfigProvider with SimpleSecuritiesProv
 
   {
     import scala.concurrent.duration._
-    val duration = 3.seconds
-    implicit val timeout = Timeout(duration)
+    implicit val timeout = Timeout.apply(3, TimeUnit.SECONDS)
 
     //TODO
     //val orderBook = sys.actorSelection("akka.tcp://TradingSystem@192.168.2.220:2552/user/orderbook").resolveOne().value.get.get
