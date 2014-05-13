@@ -1,13 +1,15 @@
 package com.comsysto.trading.akka
 
-import akka.actor.{ActorContext, SupervisorStrategy, Props, ActorRef}
+import akka.actor._
 import com.comsysto.trading.domain.Order
 import com.comsysto.trading.algorithm.{AverageMarketPriceCalculator, SimpleTradeMatcher}
 import akka.routing._
 import akka.dispatch.Dispatchers
-import com.comsysto.trading.domain.Security
-import akka.routing.Destination
 import com.comsysto.trading.provider.SecuritiesProvider
+import com.comsysto.trading.domain.Security
+import akka.routing.Router
+import akka.routing.Broadcast
+import scala.collection.immutable.IndexedSeq
 
 object OrderRouter {
 
@@ -20,29 +22,35 @@ object OrderRouter {
 /**
  * Created by sturmm on 11.03.14.
  */
-class OrderRouter extends RouterConfig {
+class OrderRouter extends Pool {
   this: SecuritiesProvider =>
-
-  private val orderBooks = scala.collection.mutable.Map.empty[Security, ActorRef]
 
   override def supervisorStrategy = SupervisorStrategy.defaultStrategy
 
   override def routerDispatcher = Dispatchers.DefaultDispatcherId
 
-
-  override def createRoute(routeeProvider: RouteeProvider) : Route = {
+  override def createRouter(system: ActorSystem): Router = {
     val orderBooksForSecurities = securities.map { security =>
-      val orderBookForSecurity = routeeProvider.context.actorOf(Props[OrderBook](
-        new OrderBook(security) with SimpleTradeMatcher with AverageMarketPriceCalculator))
-      orderBooks(security) = orderBookForSecurity
-      orderBookForSecurity
+
+        val orderBookForSecurity = system.actorOf(Props[OrderBook](
+          new OrderBook(security) with SimpleTradeMatcher with AverageMarketPriceCalculator))
+
+      security -> orderBookForSecurity
     }
+    new Router(new OrderBookRoutingLogic(orderBooksForSecurities.toMap))
+  }
 
-    routeeProvider.registerRoutees(orderBooksForSecurities)
+  override def resizer: Option[Resizer] = None
 
-    {
-      case (sender, message: Order) => List(Destination(sender, orderBooks(message.security)))
-      case (sender, message: Broadcast) => orderBooksForSecurities map (Destination(sender, _))
+  override def nrOfInstances: Int = securities.size
+}
+
+class OrderBookRoutingLogic(orderBooks: Map[Security, ActorRef]) extends RoutingLogic {
+
+  override def select(message: Any, routees: IndexedSeq[Routee]): Routee = {
+    message match {
+      case msg: Order => new ActorRefRoutee(orderBooks(msg.security))
+      case msg: Broadcast => new SeveralRoutees(orderBooks.map( e => new ActorRefRoutee(e._2)).toIndexedSeq)
     }
   }
 }

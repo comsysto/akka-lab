@@ -2,6 +2,7 @@ package com.comsysto.trading.akka
 
 import akka.actor._
 import akka.util.Timeout
+import akka.util.Timeout._
 import com.comsysto.trading.domain.{Deposit, Depot}
 import java.util.UUID
 import scala.util.Random
@@ -15,10 +16,9 @@ object TradingSimulationApp extends App with ConfigProvider with SimpleSecuritie
   val sys = ActorSystem("TradingSystem")
 
   {
-    import scala.concurrent.duration._
-    val duration = 3.seconds
-    implicit val timeout = Timeout(duration)
-
+//    import scala.concurrent.duration._
+//    val duration = 3000
+    implicit val timeout: Timeout = 3000l
 
     //TODO: We want to initialize
     val orderBook = sys.actorOf(Props[OrderBook](null).withRouter(new OrderRouter with SimpleSecuritiesProvider), "orderbooks")
