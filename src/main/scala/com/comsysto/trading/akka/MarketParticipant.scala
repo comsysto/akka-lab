@@ -26,7 +26,7 @@ object MarketParticipant {
 class MarketParticipant(id: Int, val orderBook : ActorRef, var depot : Depot, var deposit : Deposit) extends Actor with ActorLogging with Stash {
 
   //TODO: Consider storing trades in flight (wait on in-flight trades before closing the market?)
-  var currentPrice : BigDecimal = 105
+  var currentPrice : BigDecimal = 5
 
 
 //  override def preStart() = orderRouter ! ListSecurities
