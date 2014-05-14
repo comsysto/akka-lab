@@ -16,8 +16,6 @@ object TradingSimulationApp extends App with ConfigProvider with SimpleSecuritie
   val sys = ActorSystem("TradingSystem")
 
   {
-//    import scala.concurrent.duration._
-//    val duration = 3000
     implicit val timeout: Timeout = 3000l
 
     //TODO: We want to initialize
