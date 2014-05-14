@@ -19,7 +19,7 @@ object TradingSimulationApp extends App with ConfigProvider with SimpleSecuritie
     implicit val timeout: Timeout = 3000l
 
     //TODO: We want to initialize
-    val orderBook = sys.actorOf(Props[OrderRoutingActor](new OrderRoutingActor with SimpleSecuritiesProvider), "orderbooks")
+    val orderBook : ActorRef = null//sys.actorOf(Props[OrderRoutingActor](new OrderRoutingActor with SimpleSecuritiesProvider), "orderbooks")
 
     val participants = for {
       i <- 1 to config.getInt("participants.count")

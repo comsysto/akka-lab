@@ -9,7 +9,6 @@ import com.comsysto.trading.domain.Security
 import com.comsysto.trading.domain.Bid
 import com.comsysto.trading.domain.Depot
 import com.comsysto.trading.domain.Ask
-import com.comsysto.trading.akka.OrderRouterActor.ListSecuritiesResponse
 import com.comsysto.trading.domain.Deposit
 import com.comsysto.trading.akka.OrderBook.{AskResponse, BidResponse}
 
@@ -32,16 +31,6 @@ class MarketParticipant(id: Int, val orderBook : ActorRef, var depot : Depot, va
 //  override def preStart() = orderRouter ! ListSecurities
 
   def receive = awaitingOpen(Nil)
-//  def receive = awaitingListSecurities
-
-
-  def awaitingListSecurities: Receive = {
-    case ListSecuritiesResponse(s) => {
-      unstashAll()
-      context.become(awaitingOpen(s))
-    }
-    case _ => stash()
-  }
 
   def awaitingOpen(securities : List[Security]) : Receive = {
     case Open => {

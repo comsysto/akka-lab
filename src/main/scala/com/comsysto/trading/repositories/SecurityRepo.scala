@@ -5,10 +5,10 @@ import com.comsysto.trading.provider.ConfigProvider
 
 import scala.collection.JavaConversions._
 
-object SecurityRepo extends ConfigProvider {
+class SecurityRepo(val configPath : String = "securities") extends ConfigProvider {
 
   lazy val securities: List[Security] = (for {
-    name <- config.getStringList("securities")
+    name <- config.getStringList(configPath)
   } yield Security(name)).toList
 
 }

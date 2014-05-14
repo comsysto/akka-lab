@@ -8,5 +8,5 @@ trait SecuritiesProvider {
 }
 
 trait SimpleSecuritiesProvider extends SecuritiesProvider{
-  override def securities = SecurityRepo.securities
+  override def securities = new SecurityRepo().securities
 }
