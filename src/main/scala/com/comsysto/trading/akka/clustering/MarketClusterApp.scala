@@ -40,7 +40,7 @@ object MarketClusterApp extends App with SimpleSecuritiesProvider {
     implicit val timeout = Timeout.apply(3, TimeUnit.SECONDS)
 
     //TODO: Use round robin strategy to select nodes
-    val orderBook = sys.actorFor(RootActorPath(a1) /  "user" / "orderbook")
+    val orderBook = sys.actorSelection(RootActorPath(a2) /  "user" / "exchange" / "orderbooks")
 
     val participants = for {
       i <- 1 to config.getInt("participants.count")
@@ -51,7 +51,7 @@ object MarketClusterApp extends App with SimpleSecuritiesProvider {
     }
   }
 
-  def createMarketParticipant(orderBook: ActorRef, id: Int) : ActorRef = {
+  def createMarketParticipant(orderBook: ActorSelection, id: Int) : ActorRef = {
     val accountNumber = UUID.randomUUID().toString
     val depot = random(config.getLong("participants.depot.min"), config.getLong("participants.depot.max"))
     val deposit = random(config.getLong("participants.deposit.min"), config.getLong("participants.deposit.max"))
@@ -63,7 +63,7 @@ object MarketClusterApp extends App with SimpleSecuritiesProvider {
     (min + (random.nextDouble() * ((max - min) + 1))).toLong
   }
 
-  def createMarketParticipant(id: Int, orderRouter: ActorRef, depotAccountNumber: String, depotBalance: Long, depositBalance: Long): MarketParticipant = {
+  def createMarketParticipant(id: Int, orderRouter: ActorSelection, depotAccountNumber: String, depotBalance: Long, depositBalance: Long): MarketParticipant = {
     new MarketParticipant(
       id = id,
       orderBook = orderRouter,

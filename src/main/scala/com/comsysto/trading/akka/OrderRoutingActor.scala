@@ -17,7 +17,7 @@ object OrderRoutingActor {
   case object UpdateConfigResponse
 }
 
-class OrderRoutingActor(securities : Seq[Security]) extends Actor with ActorLogging{
+class OrderRoutingActor(securities : Seq[Security]) extends Actor with ActorLogging {
 
   val routingLogic = new OrderBookRoutingLogic()
 
@@ -32,11 +32,15 @@ class OrderRoutingActor(securities : Seq[Security]) extends Actor with ActorLogg
   }
 
 
+  override def preStart(): Unit = {
+    log.info(s"Orderbook router for $securities is starting.")
+  }
+
   override def receive: Receive = {
     case UpdateConfig(config) => {
       routingLogic.clearRemotes()
       config.foreach {
-        case (s, a) => routingLogic.addOrderBook(s, a)
+        case (s, a) => routingLogic.addRemoteOrderBook(s, a)
       }
       sender ! UpdateConfigResponse
     }
@@ -71,6 +75,10 @@ class OrderBookRoutingLogic extends RoutingLogic {
 
   def clearRemotes() {
     remoteOrderBooks.clear()
+  }
+
+  def addRemoteOrderBook(s: Security, a: ActorRef) ={
+    remoteOrderBooks.put(s, a)
   }
 
   def addOrderBook(s: Security, a: ActorRef) ={

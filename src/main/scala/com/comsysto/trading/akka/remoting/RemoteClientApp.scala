@@ -2,7 +2,7 @@ package com.comsysto.trading.akka.remoting
 
 import com.comsysto.trading.provider.{SimpleSecuritiesProvider, ConfigProvider}
 import scala.util.Random
-import akka.actor.{ActorRef, Props, ActorSystem}
+import akka.actor.{ActorSelection, ActorRef, Props, ActorSystem}
 import com.comsysto.trading.akka.MarketParticipant
 import java.util.UUID
 import com.comsysto.trading.domain.{Deposit, Depot}
@@ -23,9 +23,7 @@ object RemoteClientApp extends App with ConfigProvider with SimpleSecuritiesProv
   {
     implicit val timeout = Timeout.apply(3, TimeUnit.SECONDS)
 
-    //TODO
-    //val orderBook = sys.actorSelection("akka.tcp://TradingSystem@192.168.2.220:2552/user/orderbook").resolveOne().value.get.get
-    val orderBook = sys.actorFor("akka.tcp://TradingSystem@192.168.2.220:2552/user/orderbook")
+    val orderBook = sys.actorSelection("akka.tcp://TradingSystem@192.168.2.220:2552/user/orderbooks")
 
     val participants = for {
       i <- 1 to config.getInt("participants.count")
@@ -36,7 +34,7 @@ object RemoteClientApp extends App with ConfigProvider with SimpleSecuritiesProv
     }
   }
 
-  def createMarketParticipant(orderBook: ActorRef, id: Int) : ActorRef = {
+  def createMarketParticipant(orderBook: ActorSelection, id: Int) : ActorRef = {
     val accountNumber = UUID.randomUUID().toString
     val depot = random(config.getLong("participants.depot.min"), config.getLong("participants.depot.max"))
     val deposit = random(config.getLong("participants.deposit.min"), config.getLong("participants.deposit.max"))
@@ -48,7 +46,7 @@ object RemoteClientApp extends App with ConfigProvider with SimpleSecuritiesProv
     (min + (random.nextDouble() * ((max - min) + 1))).toLong
   }
 
-  def createMarketParticipant(id: Int, orderRouter: ActorRef, depotAccountNumber: String, depotBalance: Long, depositBalance: Long): MarketParticipant = {
+  def createMarketParticipant(id: Int, orderRouter: ActorSelection, depotAccountNumber: String, depotBalance: Long, depositBalance: Long): MarketParticipant = {
     new MarketParticipant(
       id = id,
       orderBook = orderRouter,

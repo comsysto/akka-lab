@@ -27,6 +27,7 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
 
 
   override def preStart() = {
+    log.info(s"Orderbook for $security is starting.")
     context.system.scheduler.schedule(1.seconds, 1.seconds, self, Trade)
   }
 
