@@ -39,9 +39,8 @@ object MarketClusterApp extends App with SimpleSecuritiesProvider {
   def init() = {
     implicit val timeout = Timeout.apply(3, TimeUnit.SECONDS)
 
-    //TODO: Will not work
-    //val orderBook = sys.actorSelection("akka.tcp://TradingSystem@192.168.2.220:2552/user/orderbook").resolveOne().value.get.get
-    val orderBook = sys.actorFor("akka.tcp://TradingSystem@192.168.2.220:2552/user/orderbook")
+    //TODO: Use round robin strategy to select nodes
+    val orderBook = sys.actorFor(RootActorPath(a1) /  "user" / "orderbook")
 
     val participants = for {
       i <- 1 to config.getInt("participants.count")
