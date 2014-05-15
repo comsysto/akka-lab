@@ -27,8 +27,8 @@ object MarketClusterApp extends App with SimpleSecuritiesProvider {
 
   val sys = ActorSystem("ClusterSystem", config)
 
-  val a1: Address = Address("akka.tcp", "ClusterSystem", "127.0.0.1", 2551)
-  val a2: Address = Address("akka.tcp", "ClusterSystem", "127.0.0.1", 2552)
+  val a1: Address = Address("akka.tcp", "ClusterSystem", "192.191.1.66", 2551)
+  val a2: Address = Address("akka.tcp", "ClusterSystem", "192.191.1.66", 2552)
 
   val cluster: Cluster = Cluster(sys)
   cluster.joinSeedNodes(a1 :: a2 :: Nil)
