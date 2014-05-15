@@ -72,11 +72,12 @@ class OrderBook(val security: Security, var currentPrice: BigDecimal = 0) extend
       }
     }
 
+    currentPrice = calculatePrice(successfulTrades, currentPrice)
+    log.debug(s"Current price for $security is $currentPrice")
+
     asks = newAsks
     bids = newBids
-    currentPrice = calculatePrice(successfulTrades, currentPrice)
 
-    log.debug(s"Current price for $security is $currentPrice")
     successfulTrades
   }
 }
