@@ -66,6 +66,8 @@ class TradingShardManager(val orderRouter: ActorRef, val securitiesProvider: Sec
       shardManagerRouter ! UpdateGlobalConfig(newConfig)
     case MemberRemoved(m, ms) =>
       log.info(s"Member $m has left cluster. Clean up config.")
+    case MemberUp(member) if member.address != cluster.selfAddress && member.hasRole("exchange") =>
+      context.system.actorSelection(RootActorPath(member.address) / "user" / TradingShardManager.name) ! ShardConfigRequest
   }
 
   def follower: Receive = {

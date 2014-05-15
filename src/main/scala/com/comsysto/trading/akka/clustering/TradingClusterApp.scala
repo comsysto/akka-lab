@@ -8,12 +8,12 @@ import scala.collection.JavaConversions._
 object TradingClusterApp {
   def main(args: Array[String]): Unit = {
     if (args.isEmpty)
-      startup(Seq(("2551", "cluster0"), ("2552", "cluster1")))
+      startup(Seq(("2551", "cluster0"), ("2552", "cluster1")), "192.191.1.66")
     //else
     //  startup(args.)
   }
 
-  def startup(nodes: Seq[Pair[String, String]]): Unit = {
+  def startup(nodes: Seq[Pair[String, String]], ip: String): Unit = {
     val clusterConfig: Config = ConfigFactory.load("application-trading-cluster.conf")
 
     nodes foreach {
@@ -25,7 +25,7 @@ object TradingClusterApp {
 
       trait ClusterSecuritiesProvider extends SecuritiesProvider {
         override def securities: List[Security] = (for {
-          name <- config.getStringList(s"exchange.$nodeId.securities")
+          name <- config.getStringList(s"exchange.$ip.$nodeId.securities")
         } yield Security(name)).toList
 
       }
