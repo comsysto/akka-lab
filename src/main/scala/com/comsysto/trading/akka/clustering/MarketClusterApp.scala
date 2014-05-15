@@ -25,10 +25,10 @@ object MarketClusterApp extends App with SimpleSecuritiesProvider {
 
   println(config.toString)
 
-  val sys = ActorSystem("ClusterSystem", config)
+  val sys = ActorSystem("TradingShard", config)
 
-  val a1: Address = Address("akka.tcp", "ClusterSystem", "192.191.1.66", 2551)
-  val a2: Address = Address("akka.tcp", "ClusterSystem", "192.191.1.66", 2552)
+  val a1: Address = Address("akka.tcp", "TradingShard", "192.191.1.66", 2551)
+  val a2: Address = Address("akka.tcp", "TradingShard", "192.191.1.66", 2552)
 
   val cluster: Cluster = Cluster(sys)
   cluster.joinSeedNodes(a1 :: a2 :: Nil)
@@ -40,7 +40,7 @@ object MarketClusterApp extends App with SimpleSecuritiesProvider {
     implicit val timeout = Timeout.apply(3, TimeUnit.SECONDS)
 
     //TODO: Use round robin strategy to select nodes
-    val orderBook = sys.actorSelection(RootActorPath(a2) /  "user" / "exchange" / "orderbooks")
+    val orderBook = sys.actorSelection(RootActorPath(a2) /  "user" / "orderbooks")
 
     val participants = for {
       i <- 1 to config.getInt("participants.count")
