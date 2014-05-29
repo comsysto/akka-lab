@@ -18,6 +18,6 @@ object PingPongServer extends App {
 
   val actor = system.actorOf(Props[PingPongActor], "ping")
 
-  system.actorSelection("akka.tcp://PingPong@192.168.2.50:2552/user/pong").tell(Ping("Hello!", 1, System.nanoTime()), actor)
+  system.actorSelection("akka.tcp://PingPong@127.0.0.1:2550/user/pong").tell(Ping("Hello!", 1, System.nanoTime()), actor)
 
 }

@@ -8,7 +8,7 @@ import scala.collection.JavaConversions._
 object TradingClusterApp {
   def main(args: Array[String]): Unit = {
     if (args.isEmpty)
-      startup(Seq(("2551", "cluster0"), ("2552", "cluster1")), "192.191.1.66")
+      startup(Seq(("2551", "cluster0"), ("2552", "cluster1")), "192.191.1.216")
     //else
     //  startup(args.)
   }
