@@ -15,12 +15,7 @@ After getting acquainted with Akka in [our first Akka lab](http://blog.comsysto.
 ## Upgrading from Akka 2.2.3 to 2.3.2
 We started our lab by upgrading to the latest Akka version 2.3.2 and got some compile errors regards routing. So we went through the [migration guide](http://doc.akka.io/docs/akka/2.3.2/project/migration-guide-2.2.x-2.3.x.html) and found the following comment which seemed to apply to us:
 
-<blockquote>
-> The API for creating custom routers and resizers have changed without keeping the old API as deprecated. 
-> That should be a an API used by only a few users and they should be able to migrate to the new API without
-> much trouble.
-
-</blockquote>
+<blockquote>The API for creating custom routers and resizers have changed without keeping the old API as deprecated. That should be a an API used by only a few users and they should be able to migrate to the new API without much trouble.</blockquote>
 
 The Akka team has introduced two different types of routers in Akka 2.3: `Pool` and `Group`. Pools are routers that manage their routees by themselves (creation and termination as child actors) whereas Groups are routers that get preconfigured routees from outside.
 
@@ -132,26 +127,25 @@ The Kamon team provides a [Docker image](https://github.com/kamon-io/docker-graf
 
 After everything is installed, we can start the StatsD daemon and Graphite:
 
+```
 ~statsd $ node stats.js config.js
 /opt/graphite $ sudo python bin/run-graphite-devel-server.py .
+```
 
 Afterwards, we start both the Ping-Pong server and the client application. In Graphite, we can then look at various metrics that are gathered by Kamon, e.g. the mailbox size:
 
-TODO: Insert image here
+![Monitoring Akka Ping-Pong](/akka-monitoring.png)
 
-## Cluster the Trading App
+## Clustering the Trading App
 
-## The Requirements
+### Aside: Akka Cluster Spec
 
-## Aside: Akka Cluster Spec
+To get started with Akka clustering we need two things:
 
-To start with the custom implementation, we need an idea of what is possible with Akka. So the first of all we need to add the Akka cluster package as dependency in our **build.sbt** :
+1. Add the Akka cluster package as dependency in our **build.sbt**: ```libraryDependencies += "com.typesafe.akka" %% "akka-cluster" % "2.3.2"```
+2. Update **application.conf** as described in the [Akka doc](http://doc.akka.io/docs/akka/2.3.2/scala/cluster-usage.html#A_Simple_Cluster_Example)
 
-```
-libraryDependencies += "com.typesafe.akka" %% "akka-cluster" % "2.3.2",
-```
-
-And afterwards we had to update our **application.conf** as figured out in the [akka doc](http://doc.akka.io/docs/akka/2.3.2/scala/cluster-usage.html#A_Simple_Cluster_Example) and that's all we need to start with clustering. For all actor systems that you will create you can decide whether to join a cluster automatically by connecting to configured seed nodes or to join a cluster programmatically:
+Cluster nodes can either join automatically by connecting to configured seed nodes or explicitly by providing an address to join programmatically. The snippet below demonstrates the programmatic approach:
 
 ```
 val config = ConfigFactory.parseString("akka.remote.netty.tcp.port=2552").withFallback(ConfigFactory.load())
@@ -163,9 +157,9 @@ val seed: Address = Address("akka.tcp", "TradingShard", "127.0.0.1", 2551)
 val cluster: Cluster = Cluster(sys).joinSeedNodes(a1 :: Nil)
 ```
 
-Assuming that we already running an actor system named `TradingSystem` on our machine on port `2551`, we're creating a second actor system with the same name - which is quite important - on port `2552`, resolving an address of a seed node and join the cluster using that address. The address can be retrieved e.g. from a database or a REST service or anything else.
+Assuming that we already have a running actor system named `TradingSystem` on our machine on port `2551`, we're creating a second actor system with the same name - which is quite important - on port `2552`, resolving an address of a seed node and join the cluster using that address. The address can be retrieved e.g. from a database or a REST service or any other data source.
  
-Now that we become a member of the cluster, we want to communicate with actors of the other members. This is of course simply possible by using the full address of an actor including the host and port of its actor system. But in most cases this is not what we want. For default purposes Akka provides 'cluster aware' router implementations such as `ClusterRouterGroup` or `ClusterRouterPool`. As for 'normal' routers it is possible to define them by configuration or programmatically:
+Now that we become a member of the cluster, we want to communicate with actors of the other cluster nodes. This is of course possible by using the full address of an actor including host and port of its actor system. But in most cases this is not what we want. Akka also provides 'cluster aware' router implementations such as `ClusterRouterGroup` or `ClusterRouterPool` which are can be configured like ordinary routers:
 
 ```
 val routeesPaths = "/user/tradingShardManager" :: Nil
@@ -183,13 +177,13 @@ val codedShardManagerRouterConf = ClusterRouterGroup(
 val codedShardManagerRouter = context.actorOf(codedShardManagerRouterConf.props(), "clusterRouter")
 ```
 
-In this example - that we'll need later - we're creating a pool whereby the routees are all the actors over the cluster that are mounted to the path `"/user/tradingShardManager"` excluding the actor that belongs to the same actor system (`allowLocalRoutees = false`). That router pool gets a `BroadcastGroup` as strategy what means that it will send all messages to each known routee. Akka ships with many more of these strategies from simple round robin over consistent hashing to metric based strategies such as heap mem or cpu load. Additionally it's of course possible let the router manage the actor instances and create more of them in the cluster when needed.
+In this example - that we'll need later - we're creating a pool whereby the routees are those actors of the cluster that are mounted to the path `"/user/tradingShardManager"` excluding the actor that belongs to the same actor system (`allowLocalRoutees = false`). That router pool gets a `BroadcastGroup` as strategy what means that it will send all messages to each known routee. Akka ships with many more of these strategies from simple round robin over consistent hashing to strategies based on metrics such as heap memory or CPU load. Additionally, it is of course possible let the router manage the actor instances and create more of them in the cluster when needed.
 
-As you can see from this short paragraph there are a lot of possibilities that akka has onboard. But nevertheless sometimes this might not be enough. In these cases you can dive deeper into the cluster configuration details and write your own protocol based on cluster events that akka broadcasts if something happens in the cluster. The following types - that we'll need later - are a subset of these messages:
+Although Akka is already shipped with a lot of these great strategies even this might sometimes not be enough. In these cases you can dive deeper into the cluster configuration details and write your own protocol based on cluster events that Akka broadcasts if something happens in the cluster. The most interesting messages for our trading application are:
 
-- `MemberUp` which is published when a new system becomes part of the cluster.
+- `MemberUp` which is published when a new node becomes part of the cluster.
 - `MemberDown` which is published when a member leaves the cluster (e.g. machine down).
-- `LeaderChanged` which is published everytime a member becomes leader of a cluster. There is no election process for who becomes leader. Leader is that member that is first one in an ordered list and this could potentially change everytime a member joins or leaves.
+- `LeaderChanged` which is published every time a member becomes leader of a cluster. There is no explicit election process on which node becomes leader. The leader is just that member that is first able to take that role. The leader can change from time to time as describe in more detail in the [Akka Cluster Spec](http://doc.akka.io/docs/akka/2.3.2/common/cluster.html)
 
 To retrieve these messages you can simply subscribe an actor to the cluster event stream and handle the messages you need:
 
@@ -202,7 +196,7 @@ class EventListeningActor extends Actor {
 	cluster.sendCurrentClusterState(self)
   }
 
-  override def recieve = {
+  override def receive = {
 	case LeaderChanged(newLeader) => 
 	case MemberRemoved(member, status) =>
 	case MemberUp(member) => 
@@ -210,10 +204,16 @@ class EventListeningActor extends Actor {
 }
 ```
 
+### Clustered Trading
+
+After we got acquainted with Akka's clustering support we had to think about the communication protocol between actors. While it is quite straightforward to define the communication protocol for an in-process Actor system, it is getting definitely harder to define a robust communication protocol for a clustered Actor system. Clustering brings a whole lot of dynamics into the runtime behavior of an Akka application: Cluster nodes can come and go, the leader could change or parts of the cluster could be isolated from each other due to a network breakdown.
+
+Due to the involved complexity we revised the communication protocol several times. The main idea is to put a few order books on each member node of the cluster. A market participant can send orders to any cluster node. If the responsible order book is hosted by the current cluster node it processes the order otherwise it looks up the destination node in its internal configuration table and forwards the order. The rest of the protocol is needed to distribute and update the configuration table as members join and leave. The protocol is implemented by `TradingShardManager` and a revised version of `OrderRoutingActor`.
+
 ## Summary
 
-An upgrade of our demo applications to Akka 2.3.2 took a bit of effort but thanks to the migration guide it was manageable. In
+An upgrade of our demo applications to Akka 2.3.2 took a bit of effort but thanks to the migration guide it was manageable. All in all we are satisfied with the new distinction between Router pools and groups.
 
 We have mixed feelings about the current monitoring support for Akka applications. Although the Kamon team did a great job and integrating monitoring into an Akka application is easy, the monitoring infrastructure needs multiple servers and a diverse set of technologies such as Node.js (StatsD) and Python (Graphite). Within the short timeframe of our Lab we barely scratched the surface in this area.
 	
-TODO: Clustering
+We were able to get some first-hand experience with clustering. Although the code itself does not change that much, clustering has great influence on the design of the communication protocol. Our main take-away is that the communication protocol must be very well thought out and it takes some experience to get this right.
