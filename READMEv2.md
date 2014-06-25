@@ -10,7 +10,7 @@
 # Reactive Programming with Akka and Scala
 ## High performance scalable Applications
 
-After getting acquainted with Akka in [our first Akka lab](http://blog.comsysto.com/2014/05/09/reactive-programming-with-akka-and-scala/), [@RoadRunner12048](https://twitter.com/RoadRunner12048) and [me](https://twitter.com/dmitterd) wanted to try out monitoring Akka to get a better understanding of the dynamic behavior of an Akka application. Additionally, we wanted to play with clustering support. We used a very rough Stock trading simulation and a Ping-Pong application that we've both implemented in the first lab as subject for our experiments.
+After getting acquainted with Akka in [our first Akka lab](http://blog.comsysto.com/2014/05/09/reactive-programming-with-akka-and-scala/), we - [@RoadRunner12048](https://twitter.com/RoadRunner12048) and [@dmiterd](https://twitter.com/dmitterd) - wanted to try out monitoring Akka to get a better understanding of the dynamic behavior of an Akka application. Additionally, we wanted to play with clustering support. We used a very rough Stock trading simulation and a Ping-Pong application that we've both implemented in the first lab as subject for our experiments.
 
 ## Upgrading from Akka 2.2.3 to 2.3.2
 We started our lab by upgrading to the latest Akka version 2.3.2 and got some compile errors regards routing. So we went through the [migration guide](http://doc.akka.io/docs/akka/2.3.2/project/migration-guide-2.2.x-2.3.x.html) and found the following comment which seemed to apply to us:
@@ -208,7 +208,13 @@ class EventListeningActor extends Actor {
 
 After we got acquainted with Akka's clustering support we had to think about the communication protocol between actors. While it is quite straightforward to define the communication protocol for an in-process Actor system, it is getting definitely harder to define a robust communication protocol for a clustered Actor system. Clustering brings a whole lot of dynamics into the runtime behavior of an Akka application: Cluster nodes can come and go, the leader could change or parts of the cluster could be isolated from each other due to a network breakdown.
 
-Due to the involved complexity we revised the communication protocol several times. The main idea is to put a few order books on each member node of the cluster. A market participant can send orders to any cluster node. If the responsible order book is hosted by the current cluster node it processes the order otherwise it looks up the destination node in its internal configuration table and forwards the order. The rest of the protocol is needed to distribute and update the configuration table as members join and leave. The protocol is implemented by `TradingShardManager` and a revised version of `OrderRoutingActor`.
+Due to the involved complexity we revised the communication protocol several times. The main idea, as depicted below, is to put a few order books on each member node of the cluster. A market participant can send orders to any cluster node. If the responsible order book is hosted by the current cluster node it processes the order otherwise it looks up the destination node in its internal configuration table and forwards the order. 
+
+![Monitoring Akka Ping-Pong](blog/TradingAppCluster_OrderRouting.png)
+
+The rest of the protocol is needed to distribute and update the configuration table as members join and leave. The protocol is implemented by `TradingShardManager` and a revised version of `OrderRoutingActor`. Every member has it's own trading shard manager, which encapsulates all protocol logic. As mentioned before one member is has the leader role. This members shard manager is responsible for maintainig the global routing table. Whenever a new member joins the cluster, the leading shard manager requests the local order books of this new member. If response arrives, new members order books are added to the global routing table. Afterwards the updated routing table will be broadcasted to all members shard manager, which is than resposible to update the local `OrderRouter`s routees. At this time every order router knows where to forward the asks and bids for each order book.
+
+![Monitoring Akka Ping-Pong](blog/TradingAppCluster_ShardConfig.png)
 
 ## Summary
 
