@@ -10,9 +10,10 @@
 # Reactive Programming with Akka and Scala
 ## High performance scalable Applications
 
-After getting acquainted with Akka in [our first Akka lab](http://blog.comsysto.com/2014/05/09/reactive-programming-with-akka-and-scala/), we - [@RoadRunner12048](https://twitter.com/RoadRunner12048) and [@dmiterd](https://twitter.com/dmitterd) - wanted to try out monitoring Akka to get a better understanding of the dynamic behavior of an Akka application. Additionally, we wanted to play with clustering support. We used a very rough Stock trading simulation and a Ping-Pong application that we've both implemented in the first lab as subject for our experiments.
+After getting acquainted with Akka in [our first Akka lab](http://blog.comsysto.com/2014/05/09/reactive-programming-with-akka-and-scala/), we - [@RoadRunner12048](https://twitter.com/RoadRunner12048) and [@dmitterd](https://twitter.com/dmitterd) - wanted to try monitoring an Akka application to get a better understanding of its dynamic behavior. Additionally, we wanted to play with clustering support. We used a very rough Stock trading simulation and a Ping-Pong application that we've both implemented in the first lab as subject for our experiments.
 
 ## Upgrading from Akka 2.2.3 to 2.3.2
+
 We started our lab by upgrading to the latest Akka version 2.3.2 and got some compile errors regards routing. So we went through the [migration guide](http://doc.akka.io/docs/akka/2.3.2/project/migration-guide-2.2.x-2.3.x.html) and found the following comment which seemed to apply to us:
 
 <blockquote>The API for creating custom routers and resizers have changed without keeping the old API as deprecated. That should be a an API used by only a few users and they should be able to migrate to the new API without much trouble.</blockquote>
@@ -134,7 +135,7 @@ After everything is installed, we can start the StatsD daemon and Graphite:
 
 Afterwards, we start both the Ping-Pong server and the client application. In Graphite, we can then look at various metrics that are gathered by Kamon, e.g. the mailbox size:
 
-![Monitoring Akka Ping-Pong](/akka-monitoring.png)
+![Monitoring Akka Ping-Pong](akka-monitoring.png)
 
 ## Clustering the Trading App
 
@@ -212,7 +213,7 @@ Due to the involved complexity we revised the communication protocol several tim
 
 ![Monitoring Akka Ping-Pong](blog/TradingAppCluster_OrderRouting.png)
 
-The rest of the protocol is needed to distribute and update the configuration table as members join and leave. The protocol is implemented by `TradingShardManager` and a revised version of `OrderRoutingActor`. Every member has it's own trading shard manager, which encapsulates all protocol logic. As mentioned before one member is has the leader role. This members shard manager is responsible for maintainig the global routing table. Whenever a new member joins the cluster, the leading shard manager requests the local order books of this new member. If response arrives, new members order books are added to the global routing table. Afterwards the updated routing table will be broadcasted to all members shard manager, which is than resposible to update the local `OrderRouter`s routees. At this time every order router knows where to forward the asks and bids for each order book.
+The rest of the protocol is needed to distribute and update the configuration table as members join and leave. The protocol is implemented by `TradingShardManager` and a revised version of `OrderRoutingActor`. Every member has it's own trading shard manager, which encapsulates all protocol logic. As mentioned before one member has the leader role. This member's `TradingShardManager` is responsible for maintaining the global routing table. Whenever a new member joins the cluster, the leader's `TradingShardManager` requests the local order books of the new member. If a response arrives, the new member's order books are added to the global routing table. Afterwards the updated routing table will be broadcasted to the other members' `TradingShardManager`, which is then responsible to update its local `OrderRouter`'s routees. Now every order router knows where to forward asks and bids for each order book in the cluster.
 
 ![Monitoring Akka Ping-Pong](blog/TradingAppCluster_ShardConfig.png)
 
