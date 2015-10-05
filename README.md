@@ -166,7 +166,7 @@ Our takeaways for this example:
 
 ### Aside: Typesafe Config
 
-We found that [typesafe config](https://github.com/typesafehub/config) is noteworthy becasue it has a good to read syntax and easy to use Scala/Java API and it is Akka's configuration mechanism. There are a lot of switches where you can tune your Akka application without changing a single line of code. Tpesafe config has a JSON like syntax called HOCON that allows to use different data types e.g. numbers, strings, arrays or nested "objects". It has also built in support for placeholder replacement. You can use it to override Akka defaults and to provide configuration for you own application too.
+We found that [typesafe config](https://github.com/typesafehub/config) is noteworthy because it has a good to read syntax and easy to use Scala/Java API and it is Akka's configuration mechanism. There are a lot of switches where you can tune your Akka application without changing a single line of code. Tpesafe config has a JSON like syntax called HOCON that allows to use different data types e.g. numbers, strings, arrays or nested "objects". It has also built in support for placeholder replacement. You can use it to override Akka defaults and to provide configuration for you own application too.
 
 So here a structural excerpt from our application config:
 
